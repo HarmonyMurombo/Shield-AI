@@ -1,0 +1,90 @@
+  <!-- Main Sidebar Container -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="/" class="brand-link">
+      <img src="/static/assets/img/pytorch.png" class="brand-image img-circle elevation-3" style="opacity: .8">
+      <span class="brand-text font-weight-light">Shield AI</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar user panel (optional) -->
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+          <img src="/static/assets/Harmony.png" class="img-circle elevation-2" alt="User Image">
+        </div>
+
+      </div>
+
+      <!-- SidebarSearch Form -->
+      <div class="form-inline">
+        <div class="input-group" data-widget="sidebar-search">
+          <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
+          <div class="input-group-append">
+            <button class="btn btn-sidebar">
+              <i class="fas fa-search fa-fw"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+          <li class="nav-item has-treeview {% if 'index' in segment %} menu-open {% endif %}">
+            <a href="#" class="nav-link {% if 'index' in segment %} active {% endif %}">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>
+                Dashboard
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="index.html" class="nav-link {% if 'index.html' in segment %} active {% endif %}">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Detection Results</p>
+                </a>
+              </li>
+<!-- New Concealed Weapon Detection Button -->
+    <li class="nav-item">
+      <a href="https://app.roboflow.com/harmony-tlv8v/shield-ai/visualize/2" class="nav-link">
+        <i class="nav-icon fas fa-thermometer-half thermal-icon"></i>  <!-- Thermal camera icon -->
+        <p>Concealed Detection</p>
+      </a>
+    </li>
+  </ul>
+</nav>
+<!-- /.sidebar-menu -->
+
+<!-- Include Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+<!-- CSS for Thermal Animation -->
+<style>
+  /* Thermal icon animation */
+  .thermal-icon {
+    color: #ffcc00; /* Color representing thermal imaging */
+    transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+  }
+
+  .thermal-icon:hover {
+    transform: scale(1.1); /* Slightly enlarge the icon on hover */
+    color: #ff5733; /* Change color on hover */
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center; /* Center icon and text vertically */
+  }
+</style>
+    </li>
+        </ul>
+      </nav>
+      <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+  </aside>
+  
