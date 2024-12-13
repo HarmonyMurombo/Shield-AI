@@ -1,7 +1,7 @@
 Here are the step-by-step instructions for running the code:
 
 
-####1 1-Clone the repository to your local computer it works on both operatings systems linux ,windows, and MAcOs
+####1- Clone the repository to your local computer it works on both operatings systems linux ,windows, and MAcOs
  git clone "Url for this project"
 
 ##### 2- Install the dependencies required for this project on the root folder after cloning:
