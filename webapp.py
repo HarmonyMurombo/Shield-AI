@@ -53,7 +53,6 @@ def send_sms_via_sinch(phone_number, message):
 #Initialising the application
 app = Flask(__name__)
 
-
 # Configure the database URI and secret key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'secretkey'
