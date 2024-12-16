@@ -232,7 +232,7 @@ def get_current_location():
     except Exception as e:
         print(f"Error fetching location: {e}")
         return None, None    
-#The route for the
+#The route for the notifications of sending and receiving alerts to the alerts page
 @app.route('/notifications')
 def notifications():
     # Folder containing detection results
@@ -304,9 +304,6 @@ def display(filename):
     else:
         return "Invalid file format"
         
-        
-        
-
 def get_frame():
     folder_path = os.getcwd()
     mp4_files = 'output.mp4'
@@ -417,6 +414,65 @@ def concealed_detection():
     # Render the upload form if not a POST request
     return render_template('index.html')
 
+
+# Route to generate real-time thermal camera feed with detection
+def generate_thermal_feed():
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        return
+
+    while True:
+        success, frame = cap.read()
+        if not success:
+            break
+
+        # Convert to grayscale and apply the thermal effect
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        thermal_effect = cv2.applyColorMap(gray, cv2.COLORMAP_JET)
+
+        # Save the frame temporarily for inference (as CLIENT expects a file path)
+        temp_path = "temp_frame.jpg"
+        cv2.imwrite(temp_path, thermal_effect)
+
+        # Perform inference using your model
+        try:
+            result = CLIENT.infer(temp_path, model_id="shield-ai/2")
+            print("Inference result:", result)
+
+            # Draw bounding boxes based on predictions
+            for pred in result['predictions']:
+                x = int(pred['x'] - pred['width'] / 2)
+                y = int(pred['y'] - pred['height'] / 2)
+                w = int(pred['width'])
+                h = int(pred['height'])
+                confidence = pred['confidence']
+                class_label = pred['class']
+
+                # Draw rectangle (bounding box)
+                cv2.rectangle(thermal_effect, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+                # Display the class and confidence score
+                label = f"{class_label}: {confidence:.2f}"
+                cv2.putText(thermal_effect, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        except Exception as e:
+            print(f"Error during inference: {e}")
+        
+        # Encode the frame as JPEG for streaming
+        ret, buffer = cv2.imencode('.jpg', thermal_effect)
+        if not ret:
+            break
+
+        # Yield the frame for streaming
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        
+#Start CCTV
+@app.route('/start_thermal_camera')
+def start_thermal_camera():
+    return Response(generate_thermal_feed(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 if __name__ == "__main__":

@@ -188,6 +188,35 @@ document.head.appendChild(style);
                         };
                     </script>
                 </div>
+             <!-- Start Thermal Camera Button -->
+<div class="start-thermal">
+    <button id="start-cctv-btn" class="btn btn-success" onclick="startThermalCamera()">Start CCTV</button>
+    
+    <!-- Loading Animation -->
+    <div id="loading-animation" style="display: none; margin-top: 10px;">
+        <div class="spinner-border text-success" role="status"></div>
+        <p>Loading thermal livestream...</p>
+    </div>
+</div>
+
+<script>
+function startThermalCamera() {
+    // Show the loading animation
+    document.getElementById("loading-animation").style.display = "block";
+    document.getElementById("start-cctv-btn").disabled = true;
+
+    // Simulate loading before opening the camera stream
+    setTimeout(function() {
+        // Hide loading animation
+        document.getElementById("loading-animation").style.display = "none";
+        document.getElementById("start-cctv-btn").style.display = "none";
+
+        // Open the camera stream in a new tab
+        window.open("/start_thermal_camera", "_blank");
+    }, 2000); // Adjust this time as needed
+}
+</script>
+
 <!-- Additional CSS for styling -->
 <style>
     .upload-form {
