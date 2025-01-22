@@ -27,12 +27,15 @@ from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
 from twilio.rest import Client
 from flask_mail import Mail,Message
+from dotenv import load_dotenv
 
-
+# Load environment variables from .env file
+load_dotenv()
 #Twilio credentials
-TWILIO_SID = 'AC02773d496b7f9e71c6653617e093dbe6'  # Replace with your Twilio SID
-TWILIO_AUTH_TOKEN = 'eecd4a65850dfd43e769e06819747bef'  # Replace with your Twilio Auth Token
-TWILIO_PHONE_NUMBER = '+13083368470'  # Replace with your Twilio phone number
+# Get Twilio credentials from the environment variables
+TWILIO_SID = os.getenv('TWILIO_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER') 
 
 client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
