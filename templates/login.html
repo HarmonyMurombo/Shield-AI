@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
+    <!-- Add Font Awesome CDN link for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: rgb(98, 11, 211); /* Slightly darker background */
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQS_vGd0pDm-VGuf_seYNJgEdHt_3tIzSA_Rg&s');
+            background-size: cover;
+            background-position: center;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,7 +20,7 @@
         }
 
         .login-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.8); /* Slight transparency for the background */
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -36,18 +40,31 @@
             color: #555; /* Slightly darker label color */
         }
 
+        .input-container {
+            position: relative;
+            margin-bottom: 15px; /* Space between fields */
+        }
+
         input {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 10px 10px 10px 30px; /* Space for icon on the left */
             border: 1px solid #ccc;
             border-radius: 4px;
             transition: border-color 0.3s;
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
         }
 
         input:focus {
             border-color: #4CAF50;
             outline: none;
+        }
+
+        .icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
         }
 
         .btn {
@@ -88,10 +105,16 @@
             {{ form.hidden_tag() }}
 
             <label for="username">Username:</label>
-            {{ form.username() }}
+            <div class="input-container">
+                <i class="fas fa-user icon"></i> <!-- User icon for username -->
+                {{ form.username() }}
+            </div>
 
             <label for="password">Password:</label>
-            {{ form.password() }}
+            <div class="input-container">
+                <i class="fas fa-key icon"></i> <!-- Key icon for password -->
+                {{ form.password() }}
+            </div>
 
             <!-- Updated the button -->
             {{ form.submit(class_='btn') }}

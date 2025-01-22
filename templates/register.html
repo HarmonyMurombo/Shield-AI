@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Page</title>
+    <!-- Add Font Awesome CDN link for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: rgb(98, 11, 211); /* Slightly darker background */
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQS_vGd0pDm-VGuf_seYNJgEdHt_3tIzSA_Rg&s'); /* Added background image */
+            background-size: cover; /* Make the image cover the entire viewport */
+            background-position: center; /* Center the image */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,11 +20,11 @@
         }
 
         .register-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background to make text readable */
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 300px; /* Adjusted width to fit the form correctly */
             text-align: center;
         }
 
@@ -36,18 +40,31 @@
             color: #555; /* Slightly darker label color */
         }
 
+        .input-container {
+            position: relative;
+            margin-bottom: 15px; /* Space between fields */
+        }
+
         input {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 10px 10px 10px 30px; /* Padding for icon on the left */
             border: 1px solid #ccc;
             border-radius: 4px;
             transition: border-color 0.3s;
+            box-sizing: border-box; /* Ensures padding doesn't affect width */
         }
 
         input:focus {
             border-color: #4CAF50;
             outline: none;
+        }
+
+        .icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
         }
 
         button {
@@ -86,10 +103,16 @@
         <h2>Register</h2>
         <form method="POST" action="{{ url_for('register') }}">
             <label for="username">Username:</label>
-            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+            <div class="input-container">
+                <i class="fas fa-user icon"></i> <!-- User icon for username -->
+                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+            </div>
 
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <div class="input-container">
+                <i class="fas fa-key icon"></i> <!-- Key icon for password -->
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
 
             <button type="submit">Register</button>
         </form>
