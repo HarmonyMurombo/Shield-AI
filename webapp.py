@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from re import DEBUG, sub
-from flask import Flask, render_template, request, redirect, send_file, url_for, Response
+from flask import Flask, render_template, request, redirect, send_file, url_for, Response, jsonify
 from werkzeug.utils import secure_filename, send_from_directory
 import os
 import subprocess
@@ -17,7 +17,6 @@ import requests
 import shutil
 import time
 import glob
-from sinch import SinchClient
 from inference_sdk import InferenceHTTPClient
 from ultralytics import YOLO
 from flask_sqlalchemy import SQLAlchemy
@@ -26,38 +25,37 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
 from flask_bcrypt import Bcrypt
-# Sinch credentials
-app_key = '7fdf241f-68da-4046-8538-6df45fb7e64a'
-app_secret = 'C9hxme~g7lvtLQQJthCq1UhaGv'
-project_id = "6d7099b4-bd82-401d-ae79-909688d9a381"  # You need to replace this with your Sinch project ID
+from twilio.rest import Client
+from flask_mail import Mail,Message
 
-# Initialize the Sinch client
-sinch_client = SinchClient(
-    key_id=app_key,
-    key_secret=app_secret,
-    project_id=project_id
-)
 
-# Function to send SMS via Sinch
-def send_sms_via_sinch(phone_number, message):
+#Twilio credentials
+TWILIO_SID = 'AC02773d496b7f9e71c6653617e093dbe6'  # Replace with your Twilio SID
+TWILIO_AUTH_TOKEN = 'eecd4a65850dfd43e769e06819747bef'  # Replace with your Twilio Auth Token
+TWILIO_PHONE_NUMBER = '+13083368470'  # Replace with your Twilio phone number
+
+client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
+
+#Function to send SMS via Twilio
+def send_sms_via_twilio(phone_number, message):
     try:
-        send_batch_response = sinch_client.sms.batches.send(
+        message = client.messages.create(
             body=message,
-            to=[phone_number],
-            from_="+447520651668",  # Replace with your Sinch number
-            delivery_report="none"
+            from_=TWILIO_PHONE_NUMBER,
+            to=phone_number
         )
-        print(f"SMS sent: {send_batch_response}")
+        print(f"SMS sent: {message.sid}")
     except Exception as e:
         print(f"Error sending SMS: {e}")
+        
 #Initialising the application
 app = Flask(__name__)
 
-# Configure the database URI and secret key
+#Configure the database URI and secret key
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'secretkey'
 
-# Initialize the database and bcrypt
+#Initialize the database and bcrypt
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
@@ -104,8 +102,6 @@ class LoginForm(FlaskForm):
 
     submit = SubmitField('Login')
 
-
-
 # Initialize the InferenceHTTPClient
 CLIENT = InferenceHTTPClient(
     api_url="https://detect.roboflow.com",
@@ -116,6 +112,7 @@ CLIENT = InferenceHTTPClient(
 def return_imge():
     return render_template("index.html")
 
+#Login route 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -126,6 +123,7 @@ def login():
             return redirect(url_for('return_imge'))  # Updated here
     return render_template('login.html', form=form)
 
+#The index page 
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
 def dashboard():
@@ -137,6 +135,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+#Route for registration
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -150,6 +149,7 @@ def register():
 
     return render_template('register.html', form=form)
 
+#The default route 
 @app.route("/", methods=["GET", "POST"])
 def predict_img():
     if request.method == "POST":
@@ -171,10 +171,10 @@ def predict_img():
                 # Perform the detection
                 model = YOLO('yolo11.pt')
                 detections =  model(img, save=True) 
-                
-                 # Send SMS if a weapon is detected
+              
+                # Send SMS if a weapon is detected
                 if len(detections) > 0:  # If any object detected
-                    send_sms_via_sinch("+263780517601", "Weapon detected!")
+                    send_sms_via_twilio("+263780517601", "Attention!!, a weapon has been detected be on high alert!!")
                 return display(f.filename)
            
             elif file_extension == 'mp4': 
@@ -209,14 +209,14 @@ def predict_img():
                     # write the frame to the output video
                     out.write(res_plotted)
                     
-                      # Send SMS if a weapon is detected
+                    # Send SMS if a weapon is detected
                     if len(results) > 0:
-                        send_sms_via_sinch("+263780517601", "Weapon detected in video!")
-
+                        send_sms_via_twilio("+263780517601", "Attention!!, a weapon has been detected be on high alert!!")
                     if cv2.waitKey(1) == ord('q'):
                         break
 
                 return video_feed()      
+            
 #Function for the current location of the device by using its ip address       
 def get_current_location():
     try:
@@ -230,7 +230,8 @@ def get_current_location():
             return None, None
     except Exception as e:
         print(f"Error fetching location: {e}")
-        return None, None    
+        return None, None   
+     
 #The route for the notifications of sending and receiving alerts to the alerts page
 @app.route('/notifications')
 def notifications():
@@ -348,11 +349,9 @@ def cctv_feed():
             img_BGR = cv2.cvtColor(res_plotted, cv2.COLOR_RGB2BGR)
             frame = cv2.imencode('.jpg', img_BGR)[1].tobytes()
             
-            
-            # Send SMS alert if a weapon is detected
-            if len(results[0].boxes) > 0:  # If any detection boxes are present
-                send_sms_via_sinch("+263780517601", "Weapon detected on CCTV feed!")
-            
+              # Send SMS if a weapon is detected
+            if len(results) > 0:
+                send_sms_via_twilio("+263780517601", "Attention!!, a weapon has been detected be on high alert!!")
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
     
@@ -467,12 +466,16 @@ def generate_thermal_feed():
         frame_bytes = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        
+
 #Start CCTV
 @app.route('/start_thermal_camera')
 def start_thermal_camera():
     return Response(generate_thermal_feed(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+#Route for the contact page
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flask app exposing Shied AI models")

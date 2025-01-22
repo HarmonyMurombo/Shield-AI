@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #e0e0e0; /* Slightly darker background */
+            background-color: rgb(98, 11, 211); /* Slightly darker background */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -50,7 +50,7 @@
             outline: none;
         }
 
-        button {
+        .btn {
             width: 100%;
             padding: 10px;
             background-color: #003366; /* Dark blue */
@@ -61,7 +61,7 @@
             transition: background-color 0.3s;
         }
 
-        button:hover {
+        .btn:hover {
             background-color: #00509e; /* Lighter blue on hover */
         }
 
@@ -93,7 +93,8 @@
             <label for="password">Password:</label>
             {{ form.password() }}
 
-            {{ form.submit() }}
+            <!-- Updated the button -->
+            {{ form.submit(class_='btn') }}
         </form>
         <div class="footer">
             <p>Forgot Password?</p>

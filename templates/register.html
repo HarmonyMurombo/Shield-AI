@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #e0e0e0; /* Slightly darker background */
+            background-color: rgb(98, 11, 211); /* Slightly darker background */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -62,7 +62,7 @@
         }
 
         button:hover {
-            background-color: #00509e; /* Lighter blue on hover */
+            background-color: #00509e; /* Darker blue on hover */
         }
 
         .footer {
@@ -85,15 +85,13 @@
     <div class="register-container">
         <h2>Register</h2>
         <form method="POST" action="{{ url_for('register') }}">
-            {{ form.hidden_tag() }}
-
             <label for="username">Username:</label>
-            {{ form.username() }}
+            <input type="text" id="username" name="username" placeholder="Enter your username" required>
 
             <label for="password">Password:</label>
-            {{ form.password() }}
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
 
-            {{ form.submit() }}
+            <button type="submit">Register</button>
         </form>
         <div class="footer">
             <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
