@@ -45,6 +45,7 @@ Flask==3.0.3
 Flask-Bcrypt==1.0.1
 Flask-Cors==5.0.0
 Flask-Login==0.6.3
+Flask-Mail==0.10.0
 Flask-SocketIO==5.4.1
 Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.1
@@ -57,6 +58,7 @@ google-api-core==2.21.0
 google-api-python-client==2.149.0
 google-auth==2.35.0
 google-auth-httplib2==0.2.0
+google-cloud==0.34.0
 google-cloud-core==2.4.1
 google-cloud-storage==2.18.2
 google-crc32c==1.6.0
