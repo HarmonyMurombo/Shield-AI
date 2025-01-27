@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shield AI - Weapon Detection System</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #f9f9f9;
+    }
+
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+
+    a {
+      text-decoration: none;
+      color: #3498db;
+    }
+
+    /* Header */
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    .logo {
+      width: 100px; /* Adjust the size of your logo */
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      font-size: 1.2rem;
+    }
+
+    nav {
+      margin-top: 20px;
+    }
+
+    nav a {
+      color: #fff;
+      margin: 0 15px;
+      font-size: 1rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: url('https://via.placeholder.com/1500x800') no-repeat center center/cover;
+      color: #fff;
+      padding: 100px 20px;
+      text-align: center;
+    }
+
+    .hero h2 {
+      font-size: 3rem;
+      margin: 0;
+      overflow: hidden; /* Ensures the text doesn't overflow */
+      white-space: nowrap; /* Keeps the text in one line */
+      border-right: 0.15em solid orange; /* Cursor effect */
+      animation: typing 4s steps(40, end) infinite, blink-caret 0.75s step-end infinite;
+    }
+
+    .hero p {
+      font-size: 1.5rem;
+      margin: 20px 0;
+    }
+
+    .hero .cta-button {
+      background: #3498db;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    /* Typewriter Animation */
+    @keyframes typing {
+      from {
+        width: 0;
+      }
+      to {
+        width: 100%;
+      }
+    }
+
+    @keyframes blink-caret {
+      from, to {
+        border-color: transparent;
+      }
+      50% {
+        border-color: orange;
+      }
+    }
+
+    /* Features Section */
+    .features {
+      padding: 50px 20px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .features h2 {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+    }
+
+    .feature-cards {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+
+    .feature-card {
+      width: 30%;
+      background: #ecf0f1;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-10px);
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      margin: 10px 0;
+    }
+
+    .feature-card p {
+      font-size: 1rem;
+      color: #666;
+    }
+
+    /* How It Works Section */
+    .how-it-works {
+      padding: 50px 20px;
+      text-align: center;
+      background: #f9f9f9;
+    }
+
+    .how-it-works h2 {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+    }
+
+    .steps {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      width: 20%;
+      text-align: center;
+    }
+
+    .step img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+    }
+
+    .step h3 {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+
+    .step p {
+      font-size: 1rem;
+      color: #666;
+    }
+
+    /* Testimonials Section */
+    .testimonials {
+      padding: 50px 20px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .testimonials h2 {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+    }
+
+    .testimonial-cards {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+
+    .testimonial-card {
+      width: 30%;
+      background: #ecf0f1;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .testimonial-card p {
+      font-size: 1rem;
+      color: #666;
+    }
+
+    .testimonial-card h3 {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+
+    /* Footer */
+    footer {
+      background: #2c3e50;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+
+    footer a {
+      color: #3498db;
+    }
+
+    /* Auth Buttons */
+    .auth-buttons {
+      margin-top: 20px;
+    }
+
+    .auth-buttons button {
+      background: #3498db;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin: 0 10px;
+    }
+
+    .auth-buttons button:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+  <img src="/static/assets/img/logo.png" alt="Shield AI Logo" class="logo">
+    <h1>Shield AI</h1>
+    <p>Protecting Lives with AI-Powered Weapon Detection</p>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#testimonials">Testimonials</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="auth-buttons">
+      <button onclick="window.location.href='/login'">Login</button>
+      <button onclick="window.location.href='/register'">Signup</button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero fade-in">
+    <h2 id="typewriter">Real-Time Weapon Detection for a Safer World</h2>
+    <p>Shield AI uses advanced AI to detect weapons in real-time, ensuring safety in schools, airports, and public spaces.</p>
+    <button class="cta-button">Request a Demo</button>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <h2>Why Choose Shield AI?</h2>
+    <div class="feature-cards">
+      <div class="feature-card">
+        <h3>Real-Time Detection</h3>
+        <p>Instant identification of weapons in live video feeds.</p>
+      </div>
+      <div class="feature-card">
+        <h3>AI-Powered Accuracy</h3>
+        <p>High precision with minimal false alarms.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Custom Alerts</h3>
+        <p>SMS, email, and sound notifications.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="how-it-works">
+    <h2>How Shield AI Works</h2>
+    <div class="steps">
+      <div class="step">
+        <img src="https://cdn-icons-png.flaticon.com/128/8334/8334315.png" alt="Capture">
+        <h3>Capture</h3>
+        <p>CCTV cameras capture live video.</p>
+      </div>
+      <div class="step">
+        <img src="https://cdn-icons-png.flaticon.com/128/9716/9716590.png" alt="Analyze">
+        <h3>Analyze</h3>
+        <p>AI processes the video to detect weapons.</p>
+      </div>
+      <div class="step">
+        <img src="https://cdn-icons-png.flaticon.com/128/18721/18721069.png" alt="Alert">
+        <h3>Alert</h3>
+        <p>Instant notifications are sent to security personnel.</p>
+      </div>
+      <div class="step">
+        <img src="https://cdn-icons-png.flaticon.com/128/8424/8424082.png" alt="Act">
+        <h3>Act</h3>
+        <p>Quick response to potential threats.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section id="testimonials" class="testimonials">
+    <h2>What Our Clients Say</h2>
+    <div class="testimonial-cards">
+      <div class="testimonial-card">
+        <p>"Shield AI has transformed our security operations. Highly recommended!"</p>
+        <h3>- Harmony Murombo, Developer</h3>
+      </div>
+      <div class="testimonial-card">
+        <p>"The system is incredibly accurate and easy to use."</p>
+        <h3>- Frank Chinembiri, ZCHPC Systems Engineer</h3>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 Shield AI. All rights reserved.</p>
+    <p><a href="#contact">Contact Us</a> | <a href="#privacy">Privacy Policy</a></p>
+  </footer>
+
+  <!-- JavaScript for Typewriter Effect -->
+  <script>
+  const text = "Real-Time Weapon Detection for a Safer World";
+const typewriterElement = document.getElementById("typewriter");
+let index = 0;
+let isDeleting = false;
+
+function typeWriter() {
+  const currentText = typewriterElement.textContent;
+
+  if (!isDeleting) {
+    // Typing phase
+    if (index < text.length) {
+      typewriterElement.textContent += text.charAt(index);
+      index++;
+      setTimeout(typeWriter, 100); // Typing speed (100ms per character)
+    } else {
+      // Pause after typing is complete
+      isDeleting = true;
+      setTimeout(typeWriter, 2000); // Pause for 2 seconds before deleting
+    }
+  } else {
+    // Deleting phase
+    if (currentText.length > 0) {
+      typewriterElement.textContent = currentText.slice(0, -1); // Remove the last character
+      setTimeout(typeWriter, 50); // Deleting speed (50ms per character)
+    } else {
+      // Reset for the next typing cycle
+      isDeleting = false;
+      index = 0;
+      setTimeout(typeWriter, 500); // Pause for 0.5 seconds before typing again
+    }
+  }
+}
+
+typeWriter(); // Start the typewriter effect
+  </script>
+</body>
+</html>

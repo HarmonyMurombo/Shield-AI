@@ -110,8 +110,14 @@ CLIENT = InferenceHTTPClient(
     api_url="https://detect.roboflow.com",
     api_key="AOqc0EA9cM5fBdZmfjVA"
 )
-#The route for starting and saving the images
+
+# The default route (homepage)
 @app.route("/")
+def home():
+    return render_template("home.html")
+
+#The route for starting and saving the images
+@app.route("/index")
 def return_imge():
     return render_template("index.html")
 
@@ -132,6 +138,8 @@ def login():
 def dashboard():
     return render_template('index.html')
 
+
+#The route for logging
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
@@ -153,7 +161,7 @@ def register():
     return render_template('register.html', form=form)
 
 #The default route 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/predict", methods=["GET", "POST"])
 def predict_img():
     if request.method == "POST":
         if 'file' in request.files:
@@ -479,6 +487,7 @@ def start_thermal_camera():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flask app exposing Shied AI models")
