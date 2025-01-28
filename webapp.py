@@ -488,10 +488,5 @@ def start_thermal_camera():
 def contact():
     return render_template('contact.html')
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Flask app exposing Shied AI models")
-    parser.add_argument("--port", default=5000, type=int, help="port number")
-    args = parser.parse_args()
-    model = YOLO('yolo11.pt')
-    app.run(host="0.0.0.0", port=args.port) 
+    app.run(debug=True)
