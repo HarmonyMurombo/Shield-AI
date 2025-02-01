@@ -125,7 +125,7 @@ prometheus-fastapi-instrumentator==6.0.0
 prometheus_client==0.21.0
 propcache==0.2.0
 proto-plus==1.24.0
-protobuf==5.28.2
+protobuf==4.25.6
 psutil==6.0.0
 PuLP==2.9.0
 py-cpuinfo==9.0.0
@@ -151,6 +151,7 @@ python-dotenv==1.0.1
 python-engineio==4.10.0
 python-socketio==5.11.4
 pytz==2024.2
+pywin32==308
 PyYAML==6.0.2
 redis==5.1.1
 referencing==0.35.1
