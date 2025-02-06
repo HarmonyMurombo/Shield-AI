@@ -488,5 +488,10 @@ def start_thermal_camera():
 def contact():
     return render_template('contact.html')
 
+#Code for atlas assistant
+@app.route('/atlas')
+def atlas():
+    return render_template('atlas.html')
+
 if __name__ == "__main__":
     app.run(debug=True)

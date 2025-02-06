@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas</title>
+
+  <!-- Add LiveKit CSS/JS if necessary -->
+  <script src="https://cdn.livekit.io/livekit.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.livekit.io/livekit.min.css">
+
+  <style>
+    /* Basic Layout Styling */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 80%;
+      max-width: 800px;
+    }
+
+    .btn {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    #livekit-room {
+      margin-top: 20px;
+      width: 100%;
+      height: 500px;
+      background-color: #ececec;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Interact with Atlas</h2>
+    <p>Click the button below to start realtime monitoring with Atlas.</p>
+
+    <!-- Button to open the new LiveKit URL -->
+    <a href="https://agents-playground.livekit.io/#cam=1&mic=1&video=1&audio=1&chat=1&theme_color=cyan" target="_blank" class="btn">
+      <i class="fas fa-video mr-2"></i> Start Atlas
+    </a>
+
+    <!-- Optionally: Embed the LiveKit Room directly in the page -->
+    <div id="livekit-room">
+      <!-- Your LiveKit setup code will render the video/audio call inside this div -->
+    </div>
+  </div>
+
+  <script>
+    // LiveKit configuration (no need for joining the room here anymore)
+    // The link is now handled by the anchor tag above
+  </script>
+
+</body>
+</html>
