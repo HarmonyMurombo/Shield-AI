@@ -55,7 +55,7 @@ def send_sms_via_twilio(phone_number, message):
 app = Flask(__name__)
 
 #Configure the database URI and secret key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://u87och3na2852:pb121f69bc1ce79d36ee20c52b30437ba02a2fb51535cca609fe2aeb64bc23c4c@cbdhrtd93854d5.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:-east-1.rds.amazonaws.com:5432/des92fo9oqfsb4'
 app.config['SECRET_KEY'] = 'secretkey'
 
 #Initialize the database and bcrypt
