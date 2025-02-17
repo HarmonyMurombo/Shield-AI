@@ -61,7 +61,7 @@
     /* Hero Section */
     .hero {
       background: url('https://via.placeholder.com/1500x800') no-repeat center center/cover;
-      color: #fff;
+      color: #000;
       padding: 100px 20px;
       text-align: center;
     }
@@ -190,41 +190,32 @@
       color: #666;
     }
 
-    /* Testimonials Section */
-    .testimonials {
+    /* Partners Section */
+    .partners {
       padding: 50px 20px;
       text-align: center;
       background: #fff;
     }
 
-    .testimonials h2 {
+    .partners h2 {
       font-size: 2.5rem;
       margin-bottom: 40px;
     }
 
-    .testimonial-cards {
+    .partner-logos {
       display: flex;
       justify-content: space-around;
       flex-wrap: wrap;
     }
 
-    .testimonial-card {
-      width: 30%;
-      background: #ecf0f1;
-      padding: 20px;
-      border-radius: 10px;
+    .partner-logo {
+      width: 20%;
       margin: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .testimonial-card p {
-      font-size: 1rem;
-      color: #666;
-    }
-
-    .testimonial-card h3 {
-      font-size: 1.2rem;
-      margin: 10px 0;
+    .partner-logo img {
+      max-width: 100%;
+      height: auto;
     }
 
     /* Footer */
@@ -331,17 +322,18 @@
     </div>
   </section>
 
-  <!-- Testimonials Section -->
-  <section id="testimonials" class="testimonials">
-    <h2>What Our Clients Say</h2>
-    <div class="testimonial-cards">
-      <div class="testimonial-card">
-        <p>"Shield AI has transformed our security operations. Highly recommended!"</p>
-        <h3>- Harmony Murombo, Developer</h3>
+  <!-- Partners Section -->
+  <section id="partners" class="partners">
+    <h2>Our Partners</h2>
+    <div class="partner-logos">
+      <div class="partner-logo">
+        <img src="https://www.cbz.co.zw/assets/media/2020/03/cbz-bank-logo.jpg" alt="CBZ Bank">
       </div>
-      <div class="testimonial-card">
-        <p>"The system is incredibly accurate and easy to use."</p>
-        <h3>- Frank Chinembiri, ZCHPC Systems Engineer</h3>
+      <div class="partner-logo">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTeMfnpVSSgRaL5_Oyhqj2v2csQ332STXWYxg&s" alt="Air Zimbabwe">
+      </div>
+      <div class="partner-logo">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTkJ90smF7knwMUMBAph0PuxWcxxTFD2ooMQ&s" alt="ZRP">
       </div>
     </div>
   </section>
@@ -349,7 +341,7 @@
   <!-- Footer -->
   <footer>
     <p>&copy; 2025 Shield AI. All rights reserved.</p>
-    <p><a href="#contact">Contact Us</a> | <a href="#privacy">Privacy Policy</a></p>
+    <p><a href="#contact">Contact Us</a> | <a href="privacy">Privacy Policy</a></p>
   </footer>
 
   <!-- JavaScript for Typewriter Effect -->
