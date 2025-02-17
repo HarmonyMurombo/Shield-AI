@@ -153,7 +153,7 @@ python-dotenv = "*"
 python-engineio = "==4.10.0"
 python-socketio = "==5.11.4"
 pytz = "==2024.2"
-pywin32 = "==308"
+pywin32 = {version = "==308", markers = "sys_platform == 'win32'"}
 pyyaml = "==6.0.2"
 redis = "==5.1.1"
 referencing = "==0.35.1"
