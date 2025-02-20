@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQS_vGd0pDm-VGuf_seYNJgEdHt_3tIzSA_Rg&s');
+            background-image: url('static/assets/wallper.jpg'); /* Military-themed background from local machine */
             background-size: cover;
             background-position: center;
             display: flex;
@@ -20,10 +20,10 @@
         }
 
         .login-container {
-            background: rgba(255, 255, 255, 0.8); /* Slight transparency for the background */
+            background: rgba(255, 255, 255, 0.9); /* Slight transparency for the container */
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             width: 300px;
             text-align: center;
         }
@@ -116,7 +116,7 @@
                 {{ form.password() }}
             </div>
 
-            <!-- Updated the button -->
+            <!-- Submit Button -->
             {{ form.submit(class_='btn') }}
         </form>
         <div class="footer">
