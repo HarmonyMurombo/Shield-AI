@@ -1,240 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shield AI Notifications</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        /* General styling */
-        body {
-            background-color: #f4f6f9;
-            color: #333;
-        }
-        .container {
-            padding: 20px;
-        }
-
-        /* Header styling */
-        h2 {
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #007bff;
-            animation: fadeInDown 1s ease-in-out;
-        }
-
-        /* Card container styling */
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-        }
-
-        /* Card styling */
-        .card {
-            width: 300px;
-            border: none;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-        }
-        .card img {
-            height: 200px;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-        .card:hover img {
-            transform: scale(1.1);
-        }
-        .card-body {
-            text-align: center;
-            padding: 20px;
-        }
-        .card-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #444;
-        }
-        .card-text {
-            font-size: 0.9em;
-            color: #777;
-        }
-
-        /* Map link styling */
-        .map-link {
-            display: inline-block;
-            margin-top: 15px;
-            color: #007bff;
-            font-weight: bold;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        .map-link:hover {
-            color: #0056b3;
-        }
-        .map-link i {
-            transition: transform 0.3s ease;
-        }
-        .map-link:hover i {
-            transform: scale(1.2);
-            color: #28a745;
-        }
-
-/* Keyframes for animations */
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shield AI Notifications</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* General styling */
+    body { background-color: #f4f6f9; color: #333; }
+    .container { padding: 20px; }
+    h2 { font-weight: 600; margin-bottom: 20px; color: #007bff; }
+    /* Search bar styling */
+    .search-bar {
+      width: 100%;
+      max-width: 400px;
+      margin: 20px auto;
+      display: block;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    /* Card container styling */
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
     }
-}
-
-/* Chat interface CSS */
-.chat-popup {
-    display: none; /* Hidden by default */
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    width: 300px;
-    background-color: black; /* Black background for chat */
-    color: white; /* White text */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-    z-index: 9999;
-    animation: slideIn 0.5s ease-out; /* Slide-in effect */
-}
-
-.chat-header {
-    background-color: #333;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    font-size: 16px;
-    border-radius: 10px 10px 0 0;
-}
-
-.chat-body {
-    padding: 15px;
-    font-size: 14px;
-    font-family: 'Arial', sans-serif;
-}
-
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-/* Animation for the chat text to simulate talking */
-#chat-message {
-    font-size: 18px;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        opacity: 1;
-        transform: scale(1);
+    /* Card styling */
+    .card {
+      width: 300px;
+      border: none;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
+    .card:hover { transform: translateY(-10px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); }
+    .card img { height: 200px; object-fit: cover; transition: transform 0.5s ease; }
+    .card:hover img { transform: scale(1.1); }
+    .card-body { text-align: center; padding: 20px; }
+    .card-title { font-size: 1.2em; font-weight: bold; color: #444; }
+    .card-text { font-size: 0.9em; color: #777; }
+    /* Map link styling */
+    .map-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #007bff;
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s ease;
     }
-    100% {
-        opacity: 1;
-        transform: scale(1);
+    .map-link:hover { color: #0056b3; }
+    .map-link i { transition: transform 0.3s ease; }
+    .map-link:hover i { transform: scale(1.2); color: #28a745; }
+    /* Chat interface CSS */
+    .chat-popup {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      width: 300px;
+      background-color: black;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      animation: slideIn 0.5s ease-out;
     }
-}
-
-/* Slide-in effect */
-@keyframes slideIn {
-    from {
-        right: -350px;
-        opacity: 0;
+    .chat-header {
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-size: 16px;
+      border-radius: 10px 10px 0 0;
     }
-    to {
-        right: 20px;
-        opacity: 1;
-    }
-}
-    </style>
+    .chat-body { padding: 15px; font-size: 14px; font-family: 'Arial', sans-serif; }
+    .close-btn { position: absolute; top: 10px; right: 10px; font-size: 20px; cursor: pointer; }
+    #chat-message { font-size: 18px; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+    @keyframes slideIn { from { right: -350px; opacity: 0; } to { right: 20px; opacity: 1; } }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2 class="text-center mt-4">Alerts</h2>
-        <div class="card-container">
-            {% if alerts %}
-                <!-- Play sound when alerts are available -->
-                <audio id="alert" src="{{ url_for('static', filename='sounds/alert.mp3') }}" preload="auto"></audio>
+  <div class="container">
+    <h2 class="text-center mt-4">Alerts</h2>
+    
+    <!-- Dynamic Search Bar -->
+    <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search by time or location..." onkeyup="filterAlerts()">
 
-                <!-- Black chat-like notification interface -->
-                <div id="chat-interface" class="chat-popup">
-                    <div class="chat-header">
-                        <strong>Alert</strong>
-                        <span class="close-btn" onclick="closeChat()">×</span>
-                    </div>
-                    <div class="chat-body">
-                        <p id="chat-message">Weapon detected! Please check your alerts.</p>
-                    </div>
-                </div>
-                <script>
-                    // Play the alert sound when there are alerts
-                    var sound = document.getElementById('alert');
-                    sound.play();
-
-                     // Show the chat interface when the alert sound starts
-                    var chatInterface = document.getElementById('chat-interface');
-                    chatInterface.style.display = 'block';  // Make the chat visible
-
-                    // Function to close the chat interface
-                    function closeChat() {
-                        chatInterface.style.display = 'none';
-                    }
-
-                     // Auto close the chat after 10 seconds (optional)
-                    setTimeout(function() {
-                        closeChat();
-                    }, 10000); // Close after 10 seconds
-
-                </script>
-
-                {% for alert in alerts %}
-                    <div class="card">
-                        <img src="{{ alert.image_url }}" alt="Detected Weapon">
-                        <div class="card-body">
-                            <h5 class="card-title">Detection {{ loop.index }}</h5>
-                            <p class="card-text"><small class="text-muted">Detected at: {{ alert.time }}</small></p>
-                            <a href="{{ alert.map_link }}" class="map-link" target="_blank">
-                                <i class="fas fa-map-marker-alt"></i> View Location
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No alerts to display.</p>
-            {% endif %}
+    <div class="card-container" id="alertContainer">
+      {% if alerts %}
+        <!-- Play sound when alerts are available -->
+        <audio id="alert" src="{{ url_for('static', filename='sounds/alert.mp3') }}" preload="auto"></audio>
+        
+        <!-- Chat-like notification interface -->
+        <div id="chat-interface" class="chat-popup">
+          <div class="chat-header">
+            <strong>Alert</strong>
+            <span class="close-btn" onclick="closeChat()">×</span>
+          </div>
+          <div class="chat-body">
+            <p id="chat-message">Weapon detected! Please check your alerts.</p>
+          </div>
         </div>
+        <script>
+          // Play alert sound and show notification
+          var sound = document.getElementById('alert');
+          sound.play();
+          var chatInterface = document.getElementById('chat-interface');
+          chatInterface.style.display = 'block';
+          function closeChat() { chatInterface.style.display = 'none'; }
+          setTimeout(closeChat, 10000); // Auto-close after 10 seconds
+        </script>
+
+        {% for alert in alerts %}
+          <div class="card alert-card">
+            <img src="{{ alert.image_url }}" alt="Detected Image">
+            <div class="card-body">
+              <h5 class="card-title">Detection {{ loop.index }}</h5>
+              <p class="card-text"><small class="text-muted">Detected at: {{ alert.time }}</small></p>
+              <a href="{{ alert.map_link }}" class="map-link" target="_blank">
+                <i class="fas fa-map-marker-alt"></i> View Location
+              </a>
+              <!-- Delete button -->
+              <br>
+              <button class="btn btn-danger mt-2" onclick="deleteAlert('{{ alert.image_url }}', this)">Delete</button>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>No alerts to display.</p>
+      {% endif %}
     </div>
-    <script>
-        // Auto-refresh the page every 30 seconds
-        setInterval(function() {
-            location.reload();
-        }, 30000); // Refresh every 30,000 milliseconds (30 seconds)
-    </script>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+  </div>
+
+  <script>
+    // Function to dynamically filter alert cards based on search input
+    function filterAlerts() {
+      let input = document.getElementById("searchInput").value.toLowerCase();
+      let cards = document.querySelectorAll(".alert-card");
+      cards.forEach(card => {
+        let timeText = card.querySelector(".card-text").innerText.toLowerCase();
+        let locationText = card.querySelector(".map-link").innerText.toLowerCase();
+        card.style.display = (timeText.includes(input) || locationText.includes(input)) ? "block" : "none";
+      });
+    }
+
+    // Helper function to display a styled message box
+    function showMessage(message, type) {
+      let container = document.getElementById('messageContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'messageContainer';
+        container.style.position = 'fixed';
+        container.style.top = '10px';
+        container.style.right = '10px';
+        container.style.zIndex = '9999';
+        container.style.width = '300px';
+        document.body.appendChild(container);
+      }
+      let alertBox = document.createElement('div');
+      alertBox.className = `alert alert-${type} alert-dismissible fade show`;
+      alertBox.style.marginBottom = '10px';
+      alertBox.role = 'alert';
+      alertBox.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      `;
+      container.appendChild(alertBox);
+      setTimeout(function() {
+        alertBox.classList.remove('show');
+        alertBox.classList.add('hide');
+        setTimeout(() => alertBox.remove(), 500);
+      }, 3000);
+    }
+
+    // Function to delete an alert (image) via AJAX
+    function deleteAlert(imageUrl, btn) {
+      fetch('/delete_alert', {
+        method: 'POST',
+        body: JSON.stringify({ "image_url": imageUrl }),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          btn.closest(".alert-card").remove();
+          showMessage("Image deleted successfully", "success");
+        } else {
+          showMessage("Failed to delete alert: " + data.error, "danger");
+        }
+      })
+      .catch(err => {
+        showMessage("An error occurred: " + err, "danger");
+      });
+    }
+
+    // Auto-refresh page every 30 seconds.
+    setInterval(function() { location.reload(); }, 30000);
+  </script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
