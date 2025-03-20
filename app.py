@@ -50,6 +50,20 @@ def send_sms_via_twilio(phone_number, message):
         print(f"SMS sent: {message.sid}")
     except Exception as e:
         print(f"Error sending SMS: {e}")
+        
+
+# Function to send alert via whatsapp
+def send_whatsapp_via_twilio(phone_number, message, media_url=None):
+    try:
+        message = client.messages.create(
+            body=message,
+            from_='whatsapp:' + TWILIO_PHONE_NUMBER,  # Twilio WhatsApp sandbox number
+            to='whatsapp:' + phone_number,
+            media_url=[media_url] if media_url else None
+        )
+        print(f"WhatsApp message sent: {message.sid}")
+    except Exception as e:
+        print(f"Error sending WhatsApp message: {e}")
 
 # Initialising the application
 app = Flask(__name__)
@@ -149,62 +163,120 @@ def register():
 # The default route for image prediction
 @app.route("/predict", methods=["GET", "POST"])
 def predict_img():
+    def get_latest_detection_image():
+        # Find the latest detection folder
+        detection_folders = glob.glob('runs/detect/*/')
+        if not detection_folders:
+            return None
+        latest_folder = max(detection_folders, key=os.path.getctime)
+        images = glob.glob(os.path.join(latest_folder, '*.jpg'))
+        return images[0] if images else None
+
+    def send_weapon_alert(class_name, confidence, source_type="image"):
+        try:
+            # Get location data
+            lat, lon = get_current_location()
+            location_msg = f"Location: https://maps.google.com/?q={lat},{lon}" if lat and lon else "Location data unavailable"
+
+            # Construct message
+            alert_message = (
+                f"🚨 WEAPON DETECTION ALERT 🚨\n"
+                f"Type: {source_type.upper()}\n"
+                f"Class: {class_name.upper()}\n"
+                f"Confidence: {confidence*100:.2f}%\n"
+                f"{location_msg}"
+            )
+
+            # Get detection image
+            detected_img_path = get_latest_detection_image()
+            if detected_img_path:
+                # Create accessible URL for the image
+                rel_path = os.path.relpath(detected_img_path, 'runs/detect')
+                detected_img_url = url_for('detections', subpath=rel_path, _external=True)
+
+                # Send WhatsApp with image
+                send_whatsapp_via_twilio("+263780517601", alert_message, detected_img_url)
+            
+            # Also send SMS
+            send_sms_via_twilio("+263780517601", alert_message)
+
+        except Exception as e:
+            print(f"Error sending alert: {e}")
+
     if request.method == "POST":
         if 'file' in request.files:
             f = request.files['file']
             basepath = os.path.dirname(__file__)
-            filepath = os.path.join(basepath, 'uploads', f.filename)
-            print("upload folder is ", filepath)
+            upload_dir = os.path.join(basepath, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            filepath = os.path.join(upload_dir, f.filename)
             f.save(filepath)
-            global imgpath
-            predict_img.imgpath = f.filename
-            print("printing predict_img :::::: ", predict_img)
-                                               
-            file_extension = f.filename.rsplit('.', 1)[1].lower() 
+            
+            file_extension = f.filename.rsplit('.', 1)[1].lower()
             
             if file_extension == 'jpg':
-                img = cv2.imread(filepath)
-                # Perform the detection
+                # Process image
                 model = YOLO('yolo11.pt')
-                detections =  model(img, save=True) 
-              
-                # Send SMS if a weapon is detected
-                if len(detections) > 0:
-                    send_sms_via_twilio("+263780517601", "Attention!!, a weapon has been detected be on high alert!!")
+                results = model(filepath, save=True)
+                
+                # Check detections
+                weapon_detected = False
+                for result in results:
+                    for box in result.boxes:
+                        cls_idx = int(box.cls.item())
+                        class_name = model.names[cls_idx]
+                        confidence = box.conf.item()
+                        if class_name in ['gun', 'knife']:
+                            weapon_detected = True
+                            send_weapon_alert(class_name, confidence)
+
+                if not weapon_detected:
+                    print("No weapons detected")
+                
                 return display(f.filename)
            
-            elif file_extension == 'mp4': 
-                video_path = filepath  # replace with your video path
+            elif file_extension == 'mp4':
+                # Video processing
+                video_path = filepath
                 cap = cv2.VideoCapture(video_path)
-                # get video dimensions
                 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                # Define the codec and create VideoWriter object
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                 out = cv2.VideoWriter('output.mp4', fourcc, 30.0, (frame_width, frame_height))
                 
-                # initialize the YOLOv11 model here
                 model = YOLO('yolo11.pt')
-                
+                last_alert_time = 0
+                alert_cooldown = 30  # seconds
+
                 while cap.isOpened():
                     ret, frame = cap.read()
                     if not ret:
-                        break                                                      
+                        break
+                    
                     results = model(frame, save=True)
-                    print(results)
-                    cv2.waitKey(1)
                     res_plotted = results[0].plot()
-                    cv2.imshow("result", res_plotted)
                     out.write(res_plotted)
                     
-                    # Send SMS if a weapon is detected
-                    if len(results) > 0:
-                        send_sms_via_twilio("+263780517601", "Attention!!, a weapon has been detected be on high alert!!")
+                    # Check for weapons in current frame
+                    current_time = time.time()
+                    for result in results:
+                        for box in result.boxes:
+                            cls_idx = int(box.cls.item())
+                            class_name = model.names[cls_idx]
+                            confidence = box.conf.item()
+                            if class_name in ['gun', 'knife'] and (current_time - last_alert_time) > alert_cooldown:
+                                send_weapon_alert(class_name, confidence, "video")
+                                last_alert_time = current_time
+
                     if cv2.waitKey(1) == ord('q'):
                         break
 
-                return video_feed()      
-            
+                cap.release()
+                out.release()
+                return video_feed()
+
+    return redirect(request.url)
+
 # Function for fetching the current location using IP
 def get_current_location():
     try:
@@ -308,24 +380,47 @@ def cctv_feed():
     cap = cv2.VideoCapture(0)
     
     def generate():
+        last_alert = 0  # For rate limiting
         while True:
             success, frame = cap.read()
             if not success:
                 break
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            img = Image.open(io.BytesIO(frame))
-            model = YOLO('yolo11.pt')
-            results = model(img, save=True)
-            res_plotted = results[0].plot()
-            img_BGR = cv2.cvtColor(res_plotted, cv2.COLOR_RGB2BGR)
-            frame = cv2.imencode('.jpg', img_BGR)[1].tobytes()
             
-            # Send SMS if a weapon is detected
-            if len(results) > 0:
-                send_sms_via_twilio("+263780517601", "Attention!!, a weapon has been detected be on high alert!!")
+            # Run detection
+            model = YOLO('yolo11.pt')
+            results = model(frame, save=True)
+            
+            # Save temporary image
+            temp_img_path = "temp_detection.jpg"
+            cv2.imwrite(temp_img_path, results[0].plot())
+            
+            # Get location
+            lat, lon = get_current_location()
+            location_msg = f"Location: https://maps.google.com/?q={lat},{lon}" if lat and lon else "Location unavailable"
+
+            # Send alerts
+            for result in results:
+                for box in result.boxes:
+                    cls_idx = int(box.cls.item())
+                    class_name = model.names[cls_idx]
+                    confidence = box.conf.item()
+                    if class_name in ['gun', 'knife'] and time.time() - last_alert > 30:  # 30s cooldown
+                        message = (f"🚨 LIVE CAMERA DETECTION 🚨\n"
+                                  f"Class: {class_name.upper()}\n"
+                                  f"Confidence: {confidence*100:.2f}%\n"
+                                  f"{location_msg}")
+                        
+                        # Create accessible URL for temp image
+                        temp_img_url = url_for('static', filename='temp_detection.jpg', _external=True)
+                        
+                        send_whatsapp_via_twilio("+263780517601", message, temp_img_url)
+                        last_alert = time.time()
+
+            # Yield frame for video feed
+            ret, buffer = cv2.imencode('.jpg', results[0].plot())
+            frame = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
