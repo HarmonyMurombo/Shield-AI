@@ -28,6 +28,7 @@ from flask_bcrypt import Bcrypt
 from twilio.rest import Client
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
+import tempfile
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,7 +37,7 @@ load_dotenv()
 TWILIO_SID = os.getenv('TWILIO_SID')
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER') 
-
+TWILIO_WHATSAPP_NUMBER= os.getenv('TWILIO_WHATSAPP_NUMBER') 
 client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
 # Function to send SMS via Twilio
@@ -55,13 +56,20 @@ def send_sms_via_twilio(phone_number, message):
 # Function to send alert via whatsapp
 def send_whatsapp_via_twilio(phone_number, message, media_url=None):
     try:
-        message = client.messages.create(
+        from_whatsapp = 'whatsapp:+14155238886'  # Twilio's sandbox number
+        to_whatsapp = 'whatsapp:' + phone_number
+
+        # Log the media URL for debugging purposes
+        if media_url:
+            print(f"Media URL to be sent: {media_url}")
+
+        msg = client.messages.create(
             body=message,
-            from_='whatsapp:' + TWILIO_PHONE_NUMBER,  # Twilio WhatsApp sandbox number
-            to='whatsapp:' + phone_number,
+            from_=from_whatsapp,
+            to=to_whatsapp,
             media_url=[media_url] if media_url else None
         )
-        print(f"WhatsApp message sent: {message.sid}")
+        print(f"WhatsApp message sent: {msg.sid}")
     except Exception as e:
         print(f"Error sending WhatsApp message: {e}")
 
@@ -160,11 +168,19 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
+# Create a dedicated temp directory
+TEMP_IMAGE_DIR = os.path.join(os.getcwd(), 'temp_images')
+os.makedirs(TEMP_IMAGE_DIR, exist_ok=True)
+
+@app.route('/temp_images/<filename>')
+def temp_images(filename):
+    return send_from_directory(TEMP_IMAGE_DIR, filename)
+
 # The default route for image prediction
 @app.route("/predict", methods=["GET", "POST"])
 def predict_img():
     def get_latest_detection_image():
-        # Find the latest detection folder
+        # Existing detection folder logic
         detection_folders = glob.glob('runs/detect/*/')
         if not detection_folders:
             return None
@@ -173,6 +189,7 @@ def predict_img():
         return images[0] if images else None
 
     def send_weapon_alert(class_name, confidence, source_type="image"):
+        # Existing alert logic
         try:
             # Get location data
             lat, lon = get_current_location()
@@ -189,20 +206,26 @@ def predict_img():
 
             # Get detection image
             detected_img_path = get_latest_detection_image()
+            
             if detected_img_path:
-                # Create accessible URL for the image
-                rel_path = os.path.relpath(detected_img_path, 'runs/detect')
-                detected_img_url = url_for('detections', subpath=rel_path, _external=True)
-
+                # Create temporary file with unique name
+                with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
+                    temp_path = temp_file.name
+                    shutil.copy(detected_img_path, temp_path)
+                    
+                # Use ngrok URL (replace with your actual ngrok URL)
+                base_url = "https://killdeer-probable-mouse.ngrok-free.app"  # Update this
+                media_url = f"{base_url}/temp_images/{os.path.basename(temp_path)}"
+                
                 # Send WhatsApp with image
-                send_whatsapp_via_twilio("+263780517601", alert_message, detected_img_url)
+                send_whatsapp_via_twilio("+263780517601", alert_message, media_url)
             
             # Also send SMS
             send_sms_via_twilio("+263780517601", alert_message)
 
         except Exception as e:
             print(f"Error sending alert: {e}")
-
+            
     if request.method == "POST":
         if 'file' in request.files:
             f = request.files['file']
@@ -423,40 +446,6 @@ def cctv_feed():
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# Route for concealed detection image upload
-@app.route('/concealed_detection', methods=['GET', 'POST'])
-def concealed_detection():
-    if request.method == "POST":
-        if 'file' in request.files:
-            f = request.files['file']
-            basepath = os.path.dirname(__file__)
-            upload_folder = os.path.join(basepath, 'uploads')
-            if not os.path.exists(upload_folder):
-                os.makedirs(upload_folder)
-            filepath = os.path.join(upload_folder, secure_filename(f.filename))
-            f.save(filepath)
-            try:
-                result = CLIENT.infer(filepath, model_id="shield-ai/2")
-                print("Inference result:", result)
-                img = cv2.imread(filepath)
-                for pred in result['predictions']:
-                    x = int(pred['x'] - pred['width'] / 2)
-                    y = int(pred['y'] - pred['height'] / 2)
-                    w = int(pred['width'])
-                    h = int(pred['height'])
-                    confidence = pred['confidence']
-                    class_label = pred['class']
-                    cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    label = f"{class_label}: {confidence:.2f}"
-                    cv2.putText(img, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                output_path = os.path.join(upload_folder, 'result.jpg')
-                cv2.imwrite(output_path, img)
-                return send_file(output_path, mimetype='image/jpeg')
-            except Exception as e:
-                print(f"Error during inference: {e}")
-                return "An error occurred during detection", 500
-    return render_template('index.html')
 
 # Route to Serve Concealed Images 
 @app.route('/concealed/<path:filename>')
