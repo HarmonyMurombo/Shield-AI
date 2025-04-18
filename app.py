@@ -29,6 +29,7 @@ from twilio.rest import Client
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import tempfile
+from flask import session
 
 # Load environment variables from .env file
 load_dotenv()
@@ -192,7 +193,8 @@ def predict_img():
         # Existing alert logic
         try:
             # Get location data
-            lat, lon = get_current_location()
+            lat = session.get('user_lat')
+            lon = session.get('user_lon')
             location_msg = f"Location: https://maps.google.com/?q={lat},{lon}" if lat and lon else "Location data unavailable"
 
             # Construct message
@@ -267,7 +269,7 @@ def predict_img():
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                 out = cv2.VideoWriter('output.mp4', fourcc, 30.0, (frame_width, frame_height))
                 
-                model = YOLO('yolo11.pt')
+                model = YOLO('yolo12.pt')
                 last_alert_time = 0
                 alert_cooldown = 30  # seconds
 
@@ -303,16 +305,25 @@ def predict_img():
 # Function for fetching the current location using IP
 def get_current_location():
     try:
+        # First try to get from session (client-side geolocation)
+        client_lat = session.get('user_lat')
+        client_lon = session.get('user_lon')
+        
+        if client_lat and client_lon:
+            print("Using client-side location")
+            return float(client_lat), float(client_lon)
+        
+        # Fallback to IP-based location
+        print("Falling back to IP geolocation")
         response = requests.get("http://ip-api.com/json/")
         data = response.json()
         if data["status"] == "success":
             return data["lat"], data["lon"]
-        else:
-            return None, None
+        return None, None
     except Exception as e:
         print(f"Error fetching location: {e}")
-        return None, None   
-     
+        return None, None
+    
 # Route for notifications showing detection alerts
 @app.route('/notifications')
 def notifications():
@@ -326,7 +337,9 @@ def notifications():
 
     subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
     alerts = []
-    latitude, longitude = get_current_location()
+    latitude = session.get('user_lat')
+    longitude = session.get('user_lon')
+    map_link = f"https://maps.google.com/?q={latitude},{longitude}" if latitude and longitude else "Location unavailable"
     map_link = f"https://www.google.com/maps?q={latitude},{longitude}" if latitude and longitude else "https://www.google.com/maps"
 
     for subfolder in subfolders:
@@ -400,52 +413,128 @@ def video_feed():
 # Function to start the CCTV camera in realtime and detect guns and knives
 @app.route("/cctv_feed")
 def cctv_feed():
+    # Initialize model once
+    model = YOLO('yolo11.pt')
+    
+    # Initialize camera with error handling
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        return "Could not open camera", 500
     
+    # Create application context
+    with app.app_context():
+        # Generate base URL once
+        base_url = url_for('static', filename='', _external=True)
+
     def generate():
-        last_alert = 0  # For rate limiting
-        while True:
-            success, frame = cap.read()
-            if not success:
-                break
-            
-            # Run detection
-            model = YOLO('yolo11.pt')
-            results = model(frame, save=True)
-            
-            # Save temporary image
-            temp_img_path = "temp_detection.jpg"
-            cv2.imwrite(temp_img_path, results[0].plot())
-            
-            # Get location
-            lat, lon = get_current_location()
-            location_msg = f"Location: https://maps.google.com/?q={lat},{lon}" if lat and lon else "Location unavailable"
+        last_alert = 0
+        try:
+            while True:
+                success, frame = cap.read()
+                if not success:
+                    break
 
-            # Send alerts
-            for result in results:
-                for box in result.boxes:
-                    cls_idx = int(box.cls.item())
-                    class_name = model.names[cls_idx]
-                    confidence = box.conf.item()
-                    if class_name in ['gun', 'knife'] and time.time() - last_alert > 30:  # 30s cooldown
-                        message = (f"🚨 LIVE CAMERA DETECTION 🚨\n"
-                                  f"Class: {class_name.upper()}\n"
-                                  f"Confidence: {confidence*100:.2f}%\n"
-                                  f"{location_msg}")
-                        
-                        # Create accessible URL for temp image
-                        temp_img_url = url_for('static', filename='temp_detection.jpg', _external=True)
-                        
-                        send_whatsapp_via_twilio("+263780517601", message, temp_img_url)
-                        last_alert = time.time()
+                # Run detection
+                results = model(frame, verbose=False)
+                annotated_frame = results[0].plot()
 
-            # Yield frame for video feed
-            ret, buffer = cv2.imencode('.jpg', results[0].plot())
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    
+                # Check for weapons
+                current_time = time.time()
+                for result in results:
+                    for box in result.boxes:
+                        cls_idx = int(box.cls.item())
+                        class_name = model.names[cls_idx]
+                        confidence = box.conf.item()
+                        
+                        if class_name in ['gun', 'knife'] and (current_time - last_alert) > 30:
+                            # Generate temp URL within application context
+                            with app.app_context():
+                                temp_img_url = f"{base_url}temp_detection.jpg"
+                                
+                                # Save image to static folder
+                                static_path = os.path.join(app.static_folder, 'temp_detection.jpg')
+                                cv2.imwrite(static_path, annotated_frame)
+
+                                # Send alert
+                                message = (f"🚨 LIVE CAMERA DETECTION 🚨\n"
+                                          f"Class: {class_name.upper()}\n"
+                                          f"Confidence: {confidence*100:.2f}%\n"
+                                          f"Location: {get_current_location_message()}")
+                                send_whatsapp_via_twilio("+263780517601", message, temp_img_url)
+                                last_alert = current_time
+
+                # Convert frame to bytes
+                ret, buffer = cv2.imencode('.jpg', annotated_frame)
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+        finally:
+            cap.release()
+            cv2.destroyAllWindows()
+
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def get_current_location_message():
+    try:
+        lat = session.get('user_lat')
+        lon = session.get('user_lon')
+        if lat and lon:
+            return f"https://maps.google.com/?q={lat},{lon}"
+        return "Location unavailable"
+    except RuntimeError:
+        return "Location context unavailable"
+
+# Route for concealed detection image upload
+@app.route('/concealed_detection', methods=['GET', 'POST'])
+def concealed_detection():
+    if request.method == "POST":
+        if 'file' in request.files:
+            f = request.files['file']
+            basepath = os.path.dirname(__file__)
+            upload_folder = os.path.join(basepath, 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+            filepath = os.path.join(upload_folder, secure_filename(f.filename))
+            f.save(filepath)
+            
+            try:
+                # Load your YOLOv12 model
+                model = YOLO('concealed.pt')  # Make sure model is in the root directory
+                
+                # Run inference with YOLOv12 format
+                results = model.predict(source=filepath, imgsz=640, conf=0.5)
+                
+                # Process results
+                img = cv2.imread(filepath)
+                
+                # Extract detections (YOLOv12 format)
+                for result in results:
+                    boxes = result.boxes.cpu().numpy()
+                    for box in boxes:
+                        # Get bounding box coordinates
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        
+                        # Get confidence and class
+                        confidence = box.conf[0]
+                        class_id = int(box.cls[0])
+                        class_label = model.names[class_id]
+                        
+                        # Draw bounding box and label
+                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        label = f"{class_label}: {confidence:.2f}"
+                        cv2.putText(img, label, (x1, y1 - 10), 
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                
+                # Save and return result
+                output_path = os.path.join(upload_folder, 'result.jpg')
+                cv2.imwrite(output_path, img)
+                return send_file(output_path, mimetype='image/jpeg')
+                
+            except Exception as e:
+                print(f"Error during inference: {e}")
+                return "An error occurred during detection", 500
+                
+    return render_template('index.html')
 
 # Route to Serve Concealed Images 
 @app.route('/concealed/<path:filename>')
