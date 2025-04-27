@@ -33,6 +33,21 @@
             color: #333;
         }
 
+        /* Error message styling */
+        .alert {
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
         label {
             display: block;
             margin: 10px 0 5px;
@@ -101,6 +116,18 @@
 <body>
     <div class="login-container">
         <h2>Login</h2>
+        
+        <!-- Error messages block -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <form method="POST" action="{{ url_for('login') }}">
             {{ form.hidden_tag() }}
 

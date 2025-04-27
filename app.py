@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from re import DEBUG, sub
-from flask import Flask, render_template, request, redirect, send_file, url_for, Response, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, send_file, url_for, Response, jsonify, send_from_directory, flash, abort
 from werkzeug.utils import secure_filename, send_from_directory
 import os
 import subprocess
@@ -30,6 +30,7 @@ from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import tempfile
 from flask import session
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -142,6 +143,8 @@ def login():
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user)
             return redirect(url_for('return_imge'))
+        else:
+            flash('Invalid username or password', 'error')  # Flash error message
     return render_template('login.html', form=form)
 
 # The index page 
@@ -241,7 +244,7 @@ def predict_img():
             
             if file_extension == 'jpg':
                 # Process image
-                model = YOLO('yolo11.pt')
+                model = YOLO('yolo12.pt')
                 results = model(filepath, save=True)
                 
                 # Check detections
@@ -365,9 +368,15 @@ def notifications():
 # New Route to Serve Detection Images
 @app.route('/detections/<path:subpath>')
 def detections(subpath):
-    folder_path = 'runs/detect'
-    return send_from_directory(folder_path, subpath, request.environ)
+    # Build the absolute path to the requested file
+    full_path = os.path.join(app.root_path, 'runs', 'detect', subpath)
 
+    # If the file does not exist, return 404
+    if not os.path.isfile(full_path):
+        abort(404)
+
+    # send_file will automatically set the correct MIME type
+    return send_file(full_path)
 # Renamed Display Route to avoid catching other paths
 @app.route('/display/<path:filename>')
 def display(filename):
@@ -413,67 +422,81 @@ def video_feed():
 # Function to start the CCTV camera in realtime and detect guns and knives
 @app.route("/cctv_feed")
 def cctv_feed():
-    # Initialize model once
-    model = YOLO('yolo11.pt')
-    
-    # Initialize camera with error handling
+    # a) Load YOLOv11 once
+    model = YOLO('yolo12.pt')
+
+    # b) Open default camera
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         return "Could not open camera", 500
-    
-    # Create application context
-    with app.app_context():
-        # Generate base URL once
-        base_url = url_for('static', filename='', _external=True)
+
+    # c) Capture base URL (still in request context)
+    base = request.url_root.rstrip('/')
 
     def generate():
-        last_alert = 0
-        try:
-            while True:
-                success, frame = cap.read()
-                if not success:
-                    break
+        last_alert = 0.0
 
-                # Run detection
-                results = model(frame, verbose=False)
-                annotated_frame = results[0].plot()
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
 
-                # Check for weapons
-                current_time = time.time()
-                for result in results:
-                    for box in result.boxes:
-                        cls_idx = int(box.cls.item())
-                        class_name = model.names[cls_idx]
-                        confidence = box.conf.item()
-                        
-                        if class_name in ['gun', 'knife'] and (current_time - last_alert) > 30:
-                            # Generate temp URL within application context
-                            with app.app_context():
-                                temp_img_url = f"{base_url}temp_detection.jpg"
-                                
-                                # Save image to static folder
-                                static_path = os.path.join(app.static_folder, 'temp_detection.jpg')
-                                cv2.imwrite(static_path, annotated_frame)
+            # d) Run inference & annotate
+            results   = model(frame, verbose=False)
+            annotated = results[0].plot()
+            now_ts    = time.time()
 
-                                # Send alert
-                                message = (f"🚨 LIVE CAMERA DETECTION 🚨\n"
-                                          f"Class: {class_name.upper()}\n"
-                                          f"Confidence: {confidence*100:.2f}%\n"
-                                          f"Location: {get_current_location_message()}")
-                                send_whatsapp_via_twilio("+263780517601", message, temp_img_url)
-                                last_alert = current_time
+            # e) On gun/knife, max one alert every 30s
+            for r in results:
+                for box in r.boxes:
+                    cls_idx    = int(box.cls.item())
+                    class_name = model.names[cls_idx]
+                    confidence = box.conf.item()
 
-                # Convert frame to bytes
-                ret, buffer = cv2.imencode('.jpg', annotated_frame)
-                frame_bytes = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                    if class_name in ('gun', 'knife') and (now_ts - last_alert) > 30:
+                        # i) Create a timestamped folder
+                        folder  = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        out_dir = os.path.join(app.root_path, 'runs', 'detect', folder)
+                        os.makedirs(out_dir, exist_ok=True)
 
-        finally:
-            cap.release()
-            cv2.destroyAllWindows()
+                        # ii) Save annotated image
+                        filename  = f"{class_name}_{int(now_ts)}.jpg"
+                        file_path = os.path.join(out_dir, filename)
+                        cv2.imwrite(file_path, annotated)
 
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+                        # iii) Build its public URL
+                        img_url = f"{base}/detections/{folder}/{filename}"
+
+                        # iv) (Optional) send SMS/WhatsApp alert
+                        message = (
+                            f"🚨 LIVE DETECTION 🚨\n"
+                            f"Class: {class_name.upper()}\n"
+                            f"Confidence: {confidence*100:.2f}%\n"
+                            f"Location: {get_current_location_message()}\n"
+                            f"Image: {img_url}"
+                        )
+                        send_whatsapp_via_twilio("+263780517601", message, img_url)
+
+                        last_alert = now_ts
+                        break  # only one alert per frame
+
+            # f) Stream MJPEG frame
+            ret, buf    = cv2.imencode('.jpg', annotated)
+            frame_bytes = buf.tobytes()
+            yield (
+                b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' +
+                frame_bytes +
+                b'\r\n'
+            )
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+    return Response(
+        generate(),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
 
 def get_current_location_message():
     try:
