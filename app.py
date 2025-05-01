@@ -30,6 +30,7 @@ from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import tempfile
 from flask import session
+from urllib.parse import urlparse
 
 
 # Load environment variables from .env file
@@ -55,26 +56,6 @@ def send_sms_via_twilio(phone_number, message):
         print(f"Error sending SMS: {e}")
         
 
-# Function to send alert via whatsapp
-def send_whatsapp_via_twilio(phone_number, message, media_url=None):
-    try:
-        from_whatsapp = 'whatsapp:+14155238886'  # Twilio's sandbox number
-        to_whatsapp = 'whatsapp:' + phone_number
-
-        # Log the media URL for debugging purposes
-        if media_url:
-            print(f"Media URL to be sent: {media_url}")
-
-        msg = client.messages.create(
-            body=message,
-            from_=from_whatsapp,
-            to=to_whatsapp,
-            media_url=[media_url] if media_url else None
-        )
-        print(f"WhatsApp message sent: {msg.sid}")
-    except Exception as e:
-        print(f"Error sending WhatsApp message: {e}")
-
 # Initialising the application
 app = Flask(__name__)
 
@@ -93,6 +74,7 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 # Define your table models
 class User(db.Model, UserMixin):
@@ -123,6 +105,48 @@ CLIENT = InferenceHTTPClient(
     api_url="https://detect.roboflow.com",
     api_key="AOqc0EA9cM5fBdZmfjVA"
 )
+
+
+#The route for the notifications to perform in realtime
+@app.context_processor
+def inject_notifications():
+    import os
+    detect_root = os.path.join(app.root_path, 'runs', 'detect')
+    all_alerts = []
+
+    # Gather all image files under runs/detect
+    if os.path.isdir(detect_root):
+        for sub in os.listdir(detect_root):
+            subdir = os.path.join(detect_root, sub)
+            if not os.path.isdir(subdir):
+                continue
+            for fn in os.listdir(subdir):
+                if fn.lower().endswith(('.jpg','.png')):
+                    full = os.path.join(subdir, fn)
+                    ts   = os.path.getctime(full)
+                    cls  = fn.split('_')[0].lower()
+                    icon = 'fa-gun' if cls == 'gun' else 'fa-knife-kitchen'
+                    all_alerts.append({
+                        'timestamp': ts,
+                        'class':     cls,
+                        'icon':      icon,
+                        'time_str':  datetime.fromtimestamp(ts).strftime("%I:%M %p")
+                    })
+
+    # sort descending by time
+    all_alerts.sort(key=lambda x: x['timestamp'], reverse=True)
+
+    # total count
+    notification_count = len(all_alerts)
+
+    # pick top 5 recent for dropdown
+    recent_alerts = all_alerts[:5]
+
+    return dict(
+        notification_count=notification_count,
+        recent_alerts=recent_alerts
+    )
+
 
 # The default route (homepage)
 @app.route("/")
@@ -221,9 +245,6 @@ def predict_img():
                 # Use ngrok URL (replace with your actual ngrok URL)
                 base_url = "https://killdeer-probable-mouse.ngrok-free.app"  # Update this
                 media_url = f"{base_url}/temp_images/{os.path.basename(temp_path)}"
-                
-                # Send WhatsApp with image
-                send_whatsapp_via_twilio("+263780517601", alert_message, media_url)
             
             # Also send SMS
             send_sms_via_twilio("+263780517601", alert_message)
@@ -326,43 +347,61 @@ def get_current_location():
     except Exception as e:
         print(f"Error fetching location: {e}")
         return None, None
-    
-# Route for notifications showing detection alerts
+   
+#Notifications route
 @app.route('/notifications')
 def notifications():
-    import os
-    from datetime import datetime
-
-    folder_path = 'runs/detect'
-    
-    if not os.path.exists(folder_path):
-        return render_template('notifications.html', alerts=[])
-
-    subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
+    folder_path = os.path.join(app.root_path, 'runs', 'detect')
     alerts = []
-    latitude = session.get('user_lat')
-    longitude = session.get('user_lon')
-    map_link = f"https://maps.google.com/?q={latitude},{longitude}" if latitude and longitude else "Location unavailable"
-    map_link = f"https://www.google.com/maps?q={latitude},{longitude}" if latitude and longitude else "https://www.google.com/maps"
+    # build map link
+    lat = session.get('user_lat')
+    lon = session.get('user_lon')
+    if lat and lon:
+        map_link = f"https://www.google.com/maps?q={lat},{lon}"
+    else:
+        map_link = "https://www.google.com/maps"
 
-    for subfolder in subfolders:
-        subfolder_path = os.path.join(folder_path, subfolder)
-        images = [
-            os.path.join(subfolder_path, img)
-            for img in os.listdir(subfolder_path)
-            if img.lower().endswith(('.jpg', '.png'))
-        ]
-        for img in images:
-            relative_path = os.path.relpath(img, folder_path).replace('\\','/')
-            alert = {
-                "image_url": '/detections/' + relative_path,
-                "time": datetime.fromtimestamp(os.path.getctime(img)).strftime("%Y-%m-%d %I:%M %p"),
-                "map_link": map_link
-            }
-            alerts.append(alert)
-    
+    # scan all saved images
+    if os.path.isdir(folder_path):
+        subs = sorted(os.listdir(folder_path), reverse=True)
+        for sub in subs:
+            subdir = os.path.join(folder_path, sub)
+            if not os.path.isdir(subdir):
+                continue
+            imgs = sorted(
+                [f for f in os.listdir(subdir) if f.lower().endswith(('.jpg','.png'))],
+                reverse=True
+            )
+            for img in imgs:
+                full = os.path.join(subdir, img)
+                ts   = os.path.getctime(full)
+                time_str = datetime.fromtimestamp(ts).strftime("%Y-%m-%d %I:%M %p")
+                rel = f"{sub}/{img}"
+                alerts.append({
+                    "image_url": url_for('detections', subpath=rel, _external=True),
+                    "time":      time_str,
+                    "map_link":  map_link
+                })
+
+    # sort by timestamp descending (we stored by folder name, but just to be sure)
     alerts.sort(key=lambda x: x["time"], reverse=True)
-    
+
+    # If caller wants JSON, return count + top-5 summary
+    if request.args.get('json') == '1':
+        summary = []
+        for a in alerts[:5]:
+            # class = prefix of filename
+            fn = os.path.basename(a["image_url"])
+            cls = fn.split('_')[0].lower()
+            icon = 'fa-gun' if cls=='gun' else 'fa-knife-kitchen'
+            summary.append({
+                "cls":  cls,
+                "icon": icon,
+                "time": a["time"].split(' ')[1] + ' ' + a["time"].split(' ')[2]  # e.g. "04:23 PM"
+            })
+        return jsonify(count=len(alerts), recent=summary)
+
+    # Otherwise render the full page
     return render_template('notifications.html', alerts=alerts)
 
 # New Route to Serve Detection Images
@@ -418,6 +457,7 @@ def get_frame():
 def video_feed():
     print("function called")
     return Response(get_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
         
 # Function to start the CCTV camera in realtime and detect guns and knives
 @app.route("/cctv_feed")
@@ -475,10 +515,7 @@ def cctv_feed():
                             f"Location: {get_current_location_message()}\n"
                             f"Image: {img_url}"
                         )
-                        send_whatsapp_via_twilio("+263780517601", message, img_url)
-
-                        last_alert = now_ts
-                        break  # only one alert per frame
+                       
 
             # f) Stream MJPEG frame
             ret, buf    = cv2.imencode('.jpg', annotated)
@@ -571,46 +608,67 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', request.environ, mimetype='image/vnd.microsoft.icon')
     
+# —————————————————————————————
+# 1) Load your local concealed model once
+# —————————————————————————————
+model = YOLO('concealed.pt')
+model.conf = 0.25  # confidence threshold
+model.iou  = 0.45  # NMS IoU threshold
+device = 'cuda' if cv2.cuda.getCudaEnabledDeviceCount() > 0 else 'cpu'
+model.to(device)
+    
 # Route to generate real-time thermal camera feed with detection
 def generate_thermal_feed():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open camera.")
         return
+
     while True:
         success, frame = cap.read()
         if not success:
             break
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        thermal_effect = cv2.applyColorMap(gray, cv2.COLORMAP_JET)
-        temp_path = "temp_frame.jpg"
-        cv2.imwrite(temp_path, thermal_effect)
-        try:
-            result = CLIENT.infer(temp_path, model_id="shield-ai/2")
-            print("Inference result:", result)
-            for pred in result['predictions']:
-                x = int(pred['x'] - pred['width'] / 2)
-                y = int(pred['y'] - pred['height'] / 2)
-                w = int(pred['width'])
-                h = int(pred['height'])
-                confidence = pred['confidence']
-                class_label = pred['class']
-                cv2.rectangle(thermal_effect, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                label = f"{class_label}: {confidence:.2f}"
-                cv2.putText(thermal_effect, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        except Exception as e:
-            print(f"Error during inference: {e}")
-        ret, buffer = cv2.imencode('.jpg', thermal_effect)
+
+        # 1) Convert to grayscale & boost contrast
+        gray    = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray_eq = cv2.equalizeHist(gray)
+
+        # 2) Invert → white is “hot,” black is “cold”
+        white_hot = cv2.bitwise_not(gray_eq)
+
+        # 3) Convert back to BGR so inference + plotting work
+        thermal = cv2.cvtColor(white_hot, cv2.COLOR_GRAY2BGR)
+
+        # 4) Run your concealed.pt model (it expects RGB input)
+        results   = model(thermal[:, :, ::-1], verbose=False)[0]
+        annotated = results.plot()  # BGR image with boxes drawn
+
+        # 5) (Optional) your alert logic here…
+
+        # 6) Stream as MJPEG
+        ret, buf = cv2.imencode('.jpg', annotated)
         if not ret:
             break
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-# Start thermal camera feed
+        yield (
+            b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' +
+            buf.tobytes() +
+            b'\r\n'
+        )
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+# —————————————————————————————
+# 3) Route to start the thermal feed
+# —————————————————————————————
 @app.route('/start_thermal_camera')
 def start_thermal_camera():
-    return Response(generate_thermal_feed(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(
+        generate_thermal_feed(),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
 
 # Route for the contact page
 @app.route('/contact')
@@ -628,27 +686,40 @@ def privacy():
     return render_template("privacy.html")
 
 # Delete alert route
+
 @app.route('/delete_alert', methods=['POST'])
 def delete_alert():
     data = request.get_json()
     image_url = data.get("image_url")
-    
     if not image_url:
         return jsonify({"success": False, "error": "No image URL provided"}), 400
 
-    prefix = "/detections/"
-    if image_url.startswith(prefix):
-        relative_path = image_url[len(prefix):]
-    else:
+    # Extract the path portion (handles full URL or just the path)
+    parsed = urlparse(image_url)
+    path = parsed.path  # e.g. '/detections/20250501_120000/gun_1714176000.jpg'
+
+    prefix = '/detections/'
+    if not path.startswith(prefix):
         return jsonify({"success": False, "error": "Invalid image URL"}), 400
 
-    file_path = os.path.join(os.getcwd(), 'runs', 'detect', relative_path)
+    # Map to your local runs/detect folder
+    relative_path = path[len(prefix):]  # '20250501_120000/gun_1714176000.jpg'
+    file_path     = os.path.join(app.root_path, 'runs', 'detect', relative_path)
+
+    if not os.path.isfile(file_path):
+        return jsonify({"success": False, "error": "File not found"}), 404
+
     try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            return jsonify({"success": True}), 200
-        else:
-            return jsonify({"success": False, "error": "File not found"}), 404
+        # Delete the image
+        os.remove(file_path)
+
+        # Remove its parent folder if now empty
+        parent_dir = os.path.dirname(file_path)
+        if os.path.isdir(parent_dir) and not os.listdir(parent_dir):
+            os.rmdir(parent_dir)
+
+        return jsonify({"success": True}), 200
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
