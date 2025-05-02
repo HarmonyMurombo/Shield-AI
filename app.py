@@ -31,7 +31,9 @@ from dotenv import load_dotenv
 import tempfile
 from flask import session
 from urllib.parse import urlparse
-
+import webview
+import sys
+import threading
 
 # Load environment variables from .env file
 load_dotenv()
@@ -723,5 +725,26 @@ def delete_alert():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if __name__ == '__main__':
+    if getattr(sys, 'frozen', False):
+        # Running as EXE
+        def run_flask():
+            app.run(host='127.0.0.1', port=5000, threaded=True)
+        
+        t = threading.Thread(target=run_flask)
+        t.daemon = True
+        t.start()
+        
+        # Create desktop window
+        webview.create_window(
+            "Shield AI Weapon Detection",
+            "http://127.0.0.1:5000",
+            width=1280,
+            height=800,
+            min_size=(1024, 768),
+            confirm_close=True
+        )
+        webview.start()
+    else:
+        # Normal Flask development mode
+        app.run(debug=True)
